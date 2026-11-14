@@ -62,6 +62,7 @@ setXhrBackend({
             return null
         }
     },
+    readFileAsync: path => fs.promises.readFile(path),
 })
 
 const window = createWindow({
@@ -105,14 +106,39 @@ implemented, WebP is unsupported, and text metrics differ from Skia.
 
 ```ts
 interface DomXhrBackend {
+    /** Blocking read, for synchronous requests (`open(..., false)`). */
     readFile(path: string): Uint8Array | null
+    /** Non blocking read, used for ordinary asynchronous requests. */
+    readFileAsync?(path: string): Promise<Uint8Array | null>
     resolvePath?(url: string): string
 }
 ```
 
 `file://` URLs are resolved as follows: `/abs` stays absolute, `file://localhost/...` loses the
 host, anything else is treated as relative to the process working directory (so
-`file://data/x.json` reads `data/x.json`). `file://` requests complete synchronously.
+`file://data/x.json` reads `data/x.json`).
+
+Asynchronous file requests (the default, and what `$.ajax` uses) go through `readFileAsync`
+when the backend provides it, so loading assets does not block the event loop. Setting one up
+looks like this:
+
+```ts
+setXhrBackend({
+    readFile(path) {
+        try {
+            return fs.readFileSync(path)
+        } catch {
+            return null
+        }
+    },
+    readFileAsync: path => fs.promises.readFile(path),
+})
+```
+
+Synchronous requests always block on `readFile` — a pending promise cannot be awaited from
+inside a synchronous `send()`. For backwards compatibility a backend that only implements
+`readFile` still works: every request then completes inside `send()`, including the
+`load`/`loadend` events.
 
 ## Tests
 

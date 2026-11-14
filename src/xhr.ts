@@ -4,14 +4,27 @@ import { DomEvent, DomEventTarget, DomProgressEvent } from './dom/event'
  * A small XMLHttpRequest implementation.
  *
  * File reads go through a pluggable backend (CrossNode wires up `fs`), while
- * http(s) requests fall back to the platform `fetch`. Calls complete
- * synchronously for files, which matches CrossCode's expectations and keeps the
- * bundled jQuery shim simple.
+ * http(s) requests fall back to the platform `fetch`.
+ *
+ * Asynchronous requests (the default) use the backend's `readFileAsync` when it
+ * exists, so loading files does not block the event loop. Synchronous requests
+ * (`open(..., false)`) have to block by definition and always use `readFile`.
+ * A backend that only implements `readFile` keeps the old behaviour: every
+ * request completes inside `send()`.
  */
 
 export interface DomXhrBackend {
-    /** Read a file. Returns null (or throws) when the file does not exist. */
+    /**
+     * Blocking read. Used for synchronous requests, and for asynchronous ones
+     * when `readFileAsync` is not implemented.
+     * Returns null (or throws) when the file does not exist.
+     */
     readFile(path: string): Uint8Array | null
+    /**
+     * Non blocking read, preferred for asynchronous requests. Resolves with
+     * null (or rejects) when the file does not exist.
+     */
+    readFileAsync?(path: string): Promise<Uint8Array | null>
     /** Optional: map a raw request URL onto a filesystem path. */
     resolvePath?(url: string): string
 }
@@ -231,6 +244,25 @@ export class DomXMLHttpRequest extends DomEventTarget {
 
     _sendFile(_url: string): void {
         const path = this._filePath()
+
+        if (this._async && currentBackend && typeof currentBackend.readFileAsync === 'function') {
+            let settled = false
+            const done = (data: Uint8Array | null, failed: any) => {
+                if (settled) return
+                settled = true
+                this._completeFile(path, data, failed)
+            }
+            try {
+                currentBackend.readFileAsync(path).then(
+                    (data: Uint8Array | null) => done(data, null),
+                    (error: any) => done(null, error)
+                )
+            } catch (error) {
+                done(null, error)
+            }
+            return
+        }
+
         let data: Uint8Array | null = null
         let failed: any = null
         if (!currentBackend) {
@@ -242,6 +274,11 @@ export class DomXMLHttpRequest extends DomEventTarget {
                 failed = error
             }
         }
+        this._completeFile(path, data, failed)
+    }
+
+    _completeFile(path: string, data: Uint8Array | null, failed: any): void {
+        if (this._aborted) return
 
         if (data == null) {
             this.status = 0
