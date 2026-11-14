@@ -1,10 +1,41 @@
+> [!CAUTION]
+>
+> # 🚨 EXTREMELY VIBECODED 🚨
+>
+> **This is not a general purpose DOM. Do not drop it into your project and expect it to work.**
+>
+> `pocketdom` was extracted from [crossnode](https://github.com/krypciak/crossnode) and exists
+> for exactly **one** consumer: running CrossCode headless. Every API in here was added because
+> CrossCode, CCLoader2/Simplify or some CrossCode mod happened to touch it — nothing was added
+> because the spec says so.
+>
+> That means:
+>
+> - **The feature set is aggressively, deliberately limited.** If CrossCode does not call it,
+>   it is missing, stubbed out, or quietly wrong. `innerHTML` round trips, attribute
+>   reflection, CSS cascade, layout, form semantics, tables and ranges are all best-effort at
+>   best.
+> - **There is no layout engine and no real CSS.** `offsetWidth`, `getBoundingClientRect()`,
+>   `getComputedStyle()` and friends return plausible looking lies.
+> - **It was written by an AI, and reviewed by nobody.** Most of it is not spec compliant;
+>   where behaviour conflicts with convenience, convenience won. The tests only prove that
+>   CrossCode boots on two canvas backends.
+> - **There is no support, no semver and no backwards compatibility.** Anything can change or
+>   be deleted the moment crossnode stops needing it. There is no npm release and there are no
+>   plans for one.
+> - **Not a browser.** Also not happy-dom, not jsdom, and not `min-document`. If you want a
+>   real DOM in Node, use one of those instead.
+>
+> Treat the "features" below as "things that happened to be necessary", not as an API contract.
+
 # pocketdom
 
-A small browser environment for JavaScript runtimes that do not have one.
+A small browser environment for JavaScript runtimes that do not have one. It exists to run
+CrossCode headless through [crossnode](https://github.com/krypciak/crossnode) — read the warning
+above before reaching for it anywhere else.
 
-`pocketdom` provides just enough of the browser to run browser oriented code (games,
-canvas renderers, old jQuery era code) headlessly in Node, Bun or a
-[Porffor](https://github.com/CanadaHonk/porffor) compiled binary:
+`pocketdom` provides the slice of the browser that CrossCode happens to need, so it can run
+headless in Node, Bun or a [Porffor](https://github.com/CanadaHonk/porffor) compiled binary:
 
 - **DOM**: `window`, `document`, elements, attributes, `classList`/`style`, a simple HTML
   parser, `querySelector`/`matches`, bubbling/capturing events, `DOMParser`.
