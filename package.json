@@ -1,0 +1,42 @@
+{
+    "name": "pocketdom",
+    "version": "0.1.0",
+    "type": "module",
+    "private": true,
+    "description": "A small browser environment (DOM, canvas, XMLHttpRequest) for runtimes that do not have one",
+    "module": "src/index.ts",
+    "types": "src/index.ts",
+    "exports": {
+        ".": "./src/index.ts",
+        "./dom": "./src/dom/index.ts",
+        "./canvas": "./src/canvas/index.ts",
+        "./xhr": "./src/xhr.ts"
+    },
+    "scripts": {
+        "test": "bun test",
+        "typecheck": "bunx tsc --noEmit",
+        "format": "oxfmt"
+    },
+    "devDependencies": {
+        "@napi-rs/canvas": "^1.1.1",
+        "@types/bun": "^1.4.4",
+        "@types/node": "^25.9.9",
+        "jpeg-js": "^0.4.4",
+        "oxfmt": "^0.60.0",
+        "pngjs": "^7.0.0",
+        "pureimage": "^0.4.20",
+        "typescript": "^7.0.2"
+    },
+    "peerDependencies": {
+        "@napi-rs/canvas": "*",
+        "jpeg-js": "*",
+        "pngjs": "*",
+        "pureimage": "*"
+    },
+    "peerDependenciesMeta": {
+        "@napi-rs/canvas": { "optional": true },
+        "jpeg-js": { "optional": true },
+        "pngjs": { "optional": true },
+        "pureimage": { "optional": true }
+    }
+}
