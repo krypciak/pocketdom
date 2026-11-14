@@ -40,7 +40,8 @@ headless in Node, Bun or a [Porffor](https://github.com/CanadaHonk/porffor) comp
 - **DOM**: `window`, `document`, elements, attributes, `classList`/`style`, a simple HTML
   parser, `querySelector`/`matches`, bubbling/capturing events, `DOMParser`.
 - **canvas**: `<canvas>`/`<img>` elements backed by a pluggable 2D canvas implementation.
-- **XMLHttpRequest**: synchronous `file://` reads from disk, `data:` URLs, `fetch` for http(s).
+- **XMLHttpRequest**: `file://` reads from disk (asynchronous by default, blocking for
+  `open(..., false)`), `data:` URLs, `fetch` for http(s).
 - **FileReader**, `Image`, `DOMParser` and the usual event classes.
 
 Everything is plain TypeScript with no dependencies in the core, and it deliberately avoids
