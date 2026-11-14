@@ -139,6 +139,7 @@ export class DomXMLHttpRequest extends DomEventTarget {
     _mimeOverride: string | null = null
     _aborted: boolean = false
     _sent: boolean = false
+    _requestId: number = 0
     _timer: any = null
 
     get responseText(): string {
@@ -163,6 +164,7 @@ export class DomXMLHttpRequest extends DomEventTarget {
         this._response = null
         this._aborted = false
         this._sent = false
+        this._requestId++
         this.readyState = 1
         this.status = 0
         this.statusText = ''
@@ -244,13 +246,14 @@ export class DomXMLHttpRequest extends DomEventTarget {
 
     _sendFile(_url: string): void {
         const path = this._filePath()
+        const requestId = this._requestId
 
         if (this._async && currentBackend && typeof currentBackend.readFileAsync === 'function') {
             let settled = false
             const done = (data: Uint8Array | null, failed: any) => {
                 if (settled) return
                 settled = true
-                this._completeFile(path, data, failed)
+                this._completeFile(path, data, failed, requestId)
             }
             try {
                 currentBackend.readFileAsync(path).then(
@@ -274,11 +277,12 @@ export class DomXMLHttpRequest extends DomEventTarget {
                 failed = error
             }
         }
-        this._completeFile(path, data, failed)
+        this._completeFile(path, data, failed, requestId)
     }
 
-    _completeFile(path: string, data: Uint8Array | null, failed: any): void {
-        if (this._aborted) return
+    _completeFile(path: string, data: Uint8Array | null, failed: any, requestId: number): void {
+        // Aborted, or `open()` was called again while the read was in flight.
+        if (this._aborted || requestId !== this._requestId) return
 
         if (data == null) {
             this.status = 0

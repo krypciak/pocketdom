@@ -477,3 +477,40 @@ describe('XMLHttpRequest async reads', () => {
         }
     })
 })
+
+describe('XMLHttpRequest stale responses', () => {
+    test('a reopened request ignores the previous pending read', async () => {
+        const resolvers: ((data: Uint8Array | null) => void)[] = []
+        const previous = getXhrBackend()
+        setXhrBackend({
+            readFile: () => null,
+            readFileAsync: () => new Promise(resolve => resolvers.push(resolve)),
+        })
+
+        try {
+            const win: any = createWindow()
+            const xhr = new win.XMLHttpRequest()
+            const texts: string[] = []
+            xhr.addEventListener('load', () => texts.push(xhr.responseText))
+
+            xhr.open('GET', 'file:///data/a.txt')
+            xhr.send()
+            xhr.open('GET', 'file:///data/a.txt')
+            xhr.send()
+
+            resolvers[0](new TextEncoder().encode('stale'))
+            await Promise.resolve()
+            await Promise.resolve()
+            expect(texts).toEqual([])
+            expect(xhr.readyState).toBe(1)
+
+            resolvers[1](new TextEncoder().encode('fresh'))
+            await Promise.resolve()
+            await Promise.resolve()
+            expect(texts).toEqual(['fresh'])
+            expect(xhr.responseText).toBe('fresh')
+        } finally {
+            setXhrBackend(previous)
+        }
+    })
+})
