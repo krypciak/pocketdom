@@ -20,7 +20,7 @@ fields, no decorators).
 
 ```ts
 import fs from 'fs'
-import { createWindow, nativeCanvasBackend, setCanvasBackend, setXhrBackend } from 'pocketdom'
+import { createWindow, installWindowGlobals, nativeCanvasBackend, setCanvasBackend, setXhrBackend } from 'pocketdom'
 
 setCanvasBackend(nativeCanvasBackend)
 setXhrBackend({
@@ -39,13 +39,14 @@ const window = createWindow({
     bodyHTML: '<div id="game"><canvas id="canvas" width="568" height="320"></canvas></div>',
 })
 
-globalThis.window = window
-globalThis.document = window.document
+// Mirrors window/document/location and every constructor listed in DOM_GLOBALS
+// onto globalThis, so bare `document`, `HTMLElement`, `Image`, ... work.
+installWindowGlobals(window)
 ```
 
-`createWindow()` returns a `DomWindow`; assign `window`, `document`, `location` and whichever
-DOM constructors your code expects to `globalThis` (see `crossnode`'s `src/dom.ts` for a
-complete bootstrap).
+`createWindow()` returns a `DomWindow`. `installWindowGlobals(win, target?)` copies it onto
+`globalThis` (or any other object); the list of copied constructors is exported as
+`DOM_GLOBALS` if you need to filter or extend it.
 
 ## Canvas backends
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { createWindow, DomEvent, DomCSSStyleDeclaration, DomClassList } from '../src'
+import { createWindow, DOM_GLOBALS, installWindowGlobals, DomEvent, DomCSSStyleDeclaration, DomClassList } from '../src'
 
 function makeWindow(bodyHTML?: string) {
     return createWindow({ bodyHTML, width: 1136, height: 640 }) as any
@@ -348,5 +348,34 @@ describe('CharacterData', () => {
         expect(text.substringData(1, 3)).toBe('bcd')
         expect(text.substringData(4, 100)).toBe('ef')
         expect(text.substringData(2, 0)).toBe('')
+    })
+})
+
+describe('global installation', () => {
+    test('installWindowGlobals mirrors the window onto a target', () => {
+        const win = makeWindow()
+        const target: any = {}
+        installWindowGlobals(win, target)
+
+        expect(target.window).toBe(win)
+        expect(target.document).toBe(win.document)
+        expect(target.location).toBe(win.location)
+        expect(target.HTMLElement).toBe(win.HTMLElement)
+        expect(target.HTMLCanvasElement).toBe(win.HTMLCanvasElement)
+        expect(target.XMLHttpRequest).toBe(win.XMLHttpRequest)
+        expect(target.Image).toBe(win.Image)
+    })
+
+    test('every listed global exists on the window', () => {
+        const win = makeWindow()
+        for (const name of DOM_GLOBALS) expect((win as any)[name]).toBeDefined()
+    })
+
+    test('installing twice is harmless', () => {
+        const win = makeWindow()
+        const target: any = {}
+        installWindowGlobals(win, target)
+        installWindowGlobals(win, target)
+        expect(target.document).toBe(win.document)
     })
 })

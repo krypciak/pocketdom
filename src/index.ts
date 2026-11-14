@@ -6,5 +6,6 @@
  */
 
 export * from './dom'
+export * from './globals'
 export * from './xhr'
 export * from './canvas'
